@@ -81,7 +81,7 @@ function applyEmojiRegex(textNode) {
 
     imageNode = document.createElement('img');
     imageNode.src = emojiUrl;
-    imageNode.alt = emojiName;
+    imageNode.alt = emojiName; imageNode.title = emojiName;
     imageNode.height = "20"; //TODO use em
     imageNode.setAttribute('aria-label', qualifiedEmojiName)
 
