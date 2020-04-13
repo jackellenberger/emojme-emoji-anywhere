@@ -2,14 +2,9 @@
   "manifest_version": 2,
   "name": "Slack Emoji Anywhere",
   "version": "0.1",
-  "browser_action": {
-    "default_icon": "icon.png"
-  },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
+      "matches": ["<all_urls>"],
       "js": [
         "jquery-3.4.1.min.js",
         "content.js"
@@ -17,16 +12,15 @@
     }
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
+    "scripts": ["background.js"],
     "persistent": false
   },
-  "web_accessible_resources": [
-    "emojilist.json"
-  ],
+  "web_accessible_resources": ["emojilist.json"],
   "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' data: https://emoji.slack-edge.com",
-  "permissions": [
-    "storage"
-  ]
+  "permissions": ["storage", "activeTab", "tabs", "http://*/", "https://*/", "clipboardWrite"],
+  "browser_action": {
+    "default_icon": "images/icon.png",
+    "default_title": "Slack Emoji Anywhere",
+    "default_popup": "popup.html"
+  }
 }

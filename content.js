@@ -1,22 +1,36 @@
 // content.js
 var emojiList, emojiRegex;
+emojiFound = 0;
+
+// Drivers //
+scanPage();
 
 // Listeners //
 chrome.storage.onChanged.addListener((changes, storageType) => {
+  // If the emojiList changes on disk, rescan the page
   if (changes.emojiList && (emojiList = changes.emojiList.newValue) && storageType == 'local') {
-    run();
+    scanPage();
   }
 });
 
-// Drivers //
-run();
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if ((request.from === 'popup') && (request.message === 'requestingPageInfo')) {
+		sendPageInfoToPopup(sendResponse);
+  }
+
+  if ((request.from === 'popup') && (request.message === 'requestingRescan')) {
+    scanPage((results) => {
+      sendPageInfoToPopup(sendResponse, results.replacedEmoji.length, Object.keys(emojiList).length);
+    });
+  }
+});
 
 // Helpers //
-function run() {
+function scanPage(callback) {
   chrome.storage.local.get('emojiList', (result) => {
     if (!result || !(emojiList = result.emojiList)) {
-      // loadEmojiFile forces a write to chrome.store which is caught by a listener which calls run()
-      return loadEmojiFile(); // TODO: prompt for refresh on badge icon?
+      // loadEmojiFile forces a write to chrome.store which is caught by a listener which calls scanPage()
+      return loadEmojiFile();
     }
 
     emojiRegexString = Object.keys(emojiList)
@@ -24,49 +38,53 @@ function run() {
       .join("|");
 
     emojiRegex = new RegExp(emojiRegexString, 'ig');
-    traverseDom(document.body);
+    replacedEmoji = traverseDom(document.body, emojiRegex);
+    scanResults = {replacedEmoji, emojiList, emojiRegex};
+
+    if (callback)
+      return callback(scanResults);
+    else
+      return scanResults;
   });
 }
 
+function traverseDom(node, emojiRegex) {
+  console.time('traverseDom');
+  var walkerNode;
+  var acceptedNodes = [];
 
-// Taken from cloud-to-butt,
-// https://github.com/panicsteve/cloud-to-butt/blob/f8c21047c89ed5182cbcec423d25aa0e27cff8d2/Source/content_script.js
-// which is in part taken from http://is.gd/mwZp7E
-function traverseDom(node) {
-  var child, next;
+  var treeWalker = document.createTreeWalker(
+    node,
+    NodeFilter.SHOW_TEXT,
+    { acceptNode: (node) => {
+      if (emojiRegex.test(node.data))
+        return NodeFilter.FILTER_ACCEPT
+    }},
+    false
+  );
 
-  var tagName = node.tagName ? node.tagName.toLowerCase() : "";
-  if (tagName == 'input' || tagName == 'textarea') {
-    return;
-  }
-  if (node.classList && node.classList.contains('ace_editor')) {
-    return;
+  // TODO: save for an "undo" option
+  while(walkerNode = treeWalker.nextNode()) {
+    acceptedNodes.push(walkerNode);
   }
 
-  switch ( node.nodeType ) {
-    case 1:  // Element
-    case 9:  // Document
-    case 11: // Document fragment
-      child = node.firstChild;
-      while ( child ) {
-        next = child.nextSibling;
-        traverseDom(child);
-        child = next;
-      }
-      break;
-    case 3: // Text node
-      applyEmojiRegex(node);
-      break;
-  }
+  console.time('traverseDom.applyEmojiRegex');
+  replacedEmoji = acceptedNodes.map((textNode) => applyEmojiRegex(textNode));
+  console.timeEnd('traverseDom.applyEmojiRegex');
+
+  console.debug('Replaced emoji: ' + replacedEmoji.length);
+  console.timeEnd('traverseDom');
+
+  return replacedEmoji;
 }
 
 // Given a text node, find all emoji we know about and replace the text with the image, a la slack
 function applyEmojiRegex(textNode) {
   var offset = 0;
   var fulltext = textNode.nodeValue;
-  var matches = fulltext.matchAll(emojiRegex);
+  var matches = Array.from(fulltext.matchAll(emojiRegex));
 
-  for (const match of matches) {
+  return matches.map((match) => {
     qualifiedEmojiName = match[0] // :emoji-name:
     emojiName = qualifiedEmojiName.replace(/:/g, ''); // emoji-name
     emojiUrl = emojiList[emojiName];
@@ -82,16 +100,30 @@ function applyEmojiRegex(textNode) {
     imageNode = document.createElement('img');
     imageNode.src = emojiUrl;
     imageNode.alt = emojiName; imageNode.title = emojiName;
-    imageNode.height = "20"; //TODO use em
+    imageNode.height = "20"; //TODO use em units
     imageNode.setAttribute('aria-label', qualifiedEmojiName)
 
     textNode.parentElement.insertBefore(imageNode, remainingTextNode)
     textNode = remainingTextNode;
 
-    console.log("Found and replaced " + match[1]);
-  }
+    emojiFound += 1; //TODO replace
+    console.debug("Found and replaced " + qualifiedEmojiName);
+
+    return {emojiName, emojiUrl};
+  });
 }
 
 function loadEmojiFile() {
-  chrome.runtime.sendMessage({"message": "refresh_emoji"});
+  chrome.runtime.sendMessage({from: 'content', message: "requestEmojiFileLoad"});
+}
+
+function sendPageInfoToPopup(callback, emojiFoundOverride, emojiCountOverride) {
+  // Directly after a scan, we can specify the emojiFound and emojiList explicitly
+  // When not directly after a scan, we'll rely on chrome caching the variable in the window.
+	var domInfo = {
+    emojiFound: emojiFoundOverride || emojiFound || 0,
+    emojiCount: emojiCountOverride || Object.keys(emojiList || []).length
+  };
+
+	return callback(domInfo);
 }

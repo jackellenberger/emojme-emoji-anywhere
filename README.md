@@ -8,3 +8,5 @@ What if your slack emoji came with you on any webpage you went to? What if you c
 * Add support for emoji composition, i.e. typing ":buttbr" and getting :buttbrow:
   * add slack emoji picker while typing
   * add ability to choose between plaintext `:emoji:`, `![mardown](emoji.png)` and `<img src="emoji.png" alt="html>`
+
+* [omnibox](https://developer.chrome.com/extensions/user_interface#omnibox) for emoji search?

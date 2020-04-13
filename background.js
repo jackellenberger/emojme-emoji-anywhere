@@ -1,38 +1,124 @@
 // background.js
 
 // Listeners //
-
-chrome.browserAction.onClicked.addListener(function(tab) {
-  // TODO: add a menu instead?
-  openTab("https://my.slack.com/customize/emoji");
-});
-
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-    if (request.message === "open_new_tab") {
+    if (request.message === 'openTab') {
       openTab(request.url);
     }
 
-    if (request.message === "refresh_emoji") {
-      loadEmojiListFromDisk();
+    if (request.message === 'requestEmojiFileLoad') {
+      loadEmojiListFromDisk(sendResponse);
+    }
+
+    if (request.message === 'getSlackToken') {
+      getSlackToken((result) => {
+        if (request.callback === 'alert') {
+          alert(result.slackToken);
+        }
+        if (request.callback === 'getSlackEmoji') {
+          getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
+        }
+        sendResponse(result);
+      });
+    }
+
+    if (request.message === 'getSlackEmoji') {
+      chrome.storage.local.get(['slackDomain', 'slackToken'], (result) => {
+        getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
+      });
+    }
+
+    if (request.message === 'requestingAlert') {
+      alert(request.text);
     }
   }
 );
 
 // Actions
 function openTab(url) {
-  chrome.tabs.create({"url": url});
+  chrome.tabs.create({url});
 }
 
-function loadEmojiListFromDisk() {
+function loadEmojiListFromDisk(callback) {
   let url = chrome.runtime.getURL('emojilist.json');
   fetch(url).then((result) => result.json()).then((emojilist) => {
     emojiList = emojilist;
     emojiCount = Object.keys(emojilist).length;
 
     chrome.storage.local.set(
-      {'emojiList': emojiList},
-      () => console.log("emojme list updated; found " + emojiCount)
+      {emojiList},
+      () => {
+        console.debug(`emojme list updated; found ${emojiCount}`);
+        return callback({complete: true});
+      }
+    );
+  });
+}
+
+function getSlackToken(callback) {
+  chrome.tabs.create({'url': 'https://my.slack.com/customize/emoji'}, (tab) => {
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, changedTab) => {
+      if (tabId == tab.id && changeInfo.status === 'complete') {
+        chrome.tabs.executeScript(tab.id, {
+          code: 'document.getElementsByTagName("html")[0].innerHTML'
+        }, (result) => {
+          slackToken = result[0].match(/xoxs-\w*-\w*-\w*-\w*/)[0];
+          console.debug(`slackToken: ${slackToken}`)
+          // for some reason we need to re-query tabs to get the resolved url
+          chrome.tabs.get(tab.id, (t) => {
+            slackDomain = t.url.match(/https:\/\/(.*).slack.com\/customize\/emoji/)[1]
+            console.debug(`slackDomain: ${slackDomain}`)
+            chrome.storage.local.set(
+              {slackToken, slackDomain},
+              () => {
+                return callback({slackToken, slackDomain});
+              }
+            );
+          });
+        })
+      }
+    });
+  });
+}
+
+function getSlackEmoji(slackDomain, slackToken, callback) {
+  fetch("https://" + slackDomain + ".slack.com/api/emoji.list", {
+		"headers": {
+			"accept": "*/*",
+			"accept-language": "en-US,en;q=0.9",
+			"content-type": "multipart/form-data; boundary=----WebKitFormBoundary",
+			"sec-fetch-dest": "empty",
+			"sec-fetch-mode": "cors",
+			"sec-fetch-site": "same-origin"
+		},
+		"referrerPolicy": "no-referrer",
+		"body": "------WebKitFormBoundary\r\nContent-Disposition: form-data; name=\"page\"\r\n\r\n1\r\n------WebKitFormBoundary\r\nContent-Disposition: form-data; name=\"count\"\r\n\r\n100\r\n------WebKitFormBoundary\r\nContent-Disposition: form-data; name=\"token\"\r\n\r\n"+slackToken+"\r\n------WebKitFormBoundary\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\ncustomize-emoji-new-query\r\n------WebKitFormBoundary\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundary--\r\n",
+		"method": "POST",
+		"mode": "cors",
+		"credentials": "include"
+  }).then((response) => response.json()).then((body) => {
+    compactedEmojiList = body.emoji;
+    emojiList = Object.fromEntries(
+      Object.entries(compactedEmojiList).map(([emojiName, emojiValue]) => {
+        if (aliasForMatch = emojiValue.match(/alias:(.*)/)) {
+          // TODO: this filters out aliases for default emoji. Re-add support.
+          if (emojiUrl = compactedEmojiList[aliasForMatch[1]]) {
+            return [emojiName, emojiUrl];
+          }
+        } else {
+          return [emojiName, emojiValue];
+        }
+      }).filter(Boolean)
+    );
+    emojiCount = Object.keys(emojiList).length;
+
+    chrome.storage.local.set(
+      {emojiList},
+      () => {
+        console.debug(`emojme list updated; found ${emojiCount}`);
+        return callback({complete: true});
+      }
     );
   });
 }

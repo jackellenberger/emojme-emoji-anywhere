@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<script src="popup.js"></script>
+	<head>
+		<style>
+      body {
+        margin: 0px !important;
+        border-radius: 5px;
+        width: 20em;
+      }
+		</style>
+	</head>
+	<body>
+    <h4 style="font-weight:bold; text-align:center;">Slack Emoji Anywhere</h4>
+    <table border="0" cellpadding="2em" style="border-collapse:collapse;">
+      <tr>
+        <td nowrap>Emoji Found:</td>
+        <td align="right"><span id="emojiFound">0</span></td>
+      </tr>
+      <tr>
+        <td nowrap>Emoji Available:</td>
+        <td align="right"><span id="emojiCount">0</span></td>
+      </tr>
+      <tr>
+        <td><button id="requestRescan">Rescan Page</button></td>
+      </tr>
+      <tr>
+        <td><button id="openCustomizePage">Add More Emoji</button></td>
+      </tr>
+      <tr>
+        <td><button id="getSlackToken">Get Slack Token</button></td>
+      </tr>
+      <tr>
+        <td><button id="getSlackEmoji">Refresh Emoji</button></td>
+      </tr>
+      <!-- TODO: un-emojify page -->
+      <!-- TODO: never emojify page -->
+      <!-- TODO: dsable extension -->
+    </table>
+	</body>
+</html>
