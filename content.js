@@ -57,8 +57,10 @@ function traverseDom(node, emojiRegex) {
     node,
     NodeFilter.SHOW_TEXT,
     { acceptNode: (node) => {
+      if (node.parentNode.tagName === 'TEXTAREA')
+        return NodeFilter.FILTER_REJECT;
       if (emojiRegex.test(node.data))
-        return NodeFilter.FILTER_ACCEPT
+        return NodeFilter.FILTER_ACCEPT;
     }},
     false
   );
