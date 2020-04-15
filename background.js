@@ -1,43 +1,53 @@
 // background.js
+var emojiList, slackDomain, slackToken;
 
 // Listeners //
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.message === 'openTab') {
-      openTab(request.url);
-    }
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === 'openTab')
+    openTab(request.url);
 
-    if (request.message === 'requestEmojiFileLoad') {
-      loadEmojiListFromDisk(sendResponse);
-    }
+  if (request.message === 'requestEmojiFileLoad')
+    loadEmojiListFromDisk(sendResponse);
 
-    if (request.message === 'getSlackToken') {
-      getSlackToken((result) => {
-        if (request.callback === 'alert') {
-          alert(result.slackToken);
-        }
-        if (request.callback === 'getSlackEmoji') {
-          getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
-        }
-        sendResponse(result);
-      });
-    }
+  if (request.message === 'requestingAlert')
+    alert(request.text);
 
-    if (request.message === 'getSlackEmoji') {
-      chrome.storage.local.get(['slackDomain', 'slackToken'], (result) => {
+  if (request.message === 'getSlackToken') {
+    getSlackToken((result) => {
+      if (request.callback === 'alert')
+        alert(result.slackToken);
+      if (request.callback === 'getSlackEmoji')
         getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
-      });
-    }
 
-    if (request.message === 'requestingAlert') {
-      alert(request.text);
-    }
+      sendResponse(result);
+    });
   }
-);
+
+  if (request.message === 'getSlackEmoji') {
+    chrome.storage.local.get(['slackDomain', 'slackToken'], (result) => {
+      getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
+    });
+  }
+});
+
+chrome.omnibox.onInputChanged.addListener((text, suggest) => {
+  suggestMatchingEmoji(text, suggest);
+});
+
+chrome.omnibox.onInputEntered.addListener((text) => {
+  // TODO check if emoji is emoji and not a url, if so swap it to url
+  text = text.replace(/:/, '');
+  insertEmoji(text);
+});
+
 
 // Actions
 function openTab(url) {
   chrome.tabs.create({url});
+}
+
+function clearEmojiList() {
+  chrome.storage.local.remove('emojiList', () => console.log('cleared emojilist'));
 }
 
 function loadEmojiListFromDisk(callback) {
@@ -103,9 +113,8 @@ function getSlackEmoji(slackDomain, slackToken, callback) {
       Object.entries(compactedEmojiList).map(([emojiName, emojiValue]) => {
         if (aliasForMatch = emojiValue.match(/alias:(.*)/)) {
           // TODO: this filters out aliases for default emoji. Re-add support.
-          if (emojiUrl = compactedEmojiList[aliasForMatch[1]]) {
+          if (emojiUrl = compactedEmojiList[aliasForMatch[1]])
             return [emojiName, emojiUrl];
-          }
         } else {
           return [emojiName, emojiValue];
         }
@@ -123,7 +132,70 @@ function getSlackEmoji(slackDomain, slackToken, callback) {
   });
 }
 
+function suggestMatchingEmoji(partialEmoji, suggest) {
+  if (! emojiList) {
+    chrome.storage.local.get('emojiList', (result) => {
+      emojiList = result.emojiList;
+      suggest(matchingEmoji(emojiList, partialEmoji));
+    });
+  } else {
+    suggest(matchingEmoji(emojiList, partialEmoji));
+  }
+}
+
+function insertEmoji(emojiUrl) {
+  getCurrentTab((tab) => {
+    var tArea = document.createElement('textarea');
+    document.body.appendChild(tArea);
+    tArea.value = emojiUrl;
+    tArea.focus();
+    tArea.select();
+    document.execCommand('copy');
+
+    chrome.tabs.executeScript(tab.id, {matchAboutBlank: true, code:
+      "document.execCommand('paste');"
+    }, function() {
+      if (chrome.runtime.lastError) console.log(chrome.runtime.lastError);
+      document.body.removeChild(tArea);
+    });
+  });
+}
+
 // Helpers //
-function clearEmojiList() {
-  chrome.storage.local.remove('emojiList', () => console.log('cleared emojilist'));
+function matchingEmoji(emojiList, text) {
+  return Object.keys(emojiList)
+    .reduce((results, emojiName) => {
+      if ((index = emojiName.indexOf(text)) > -1)
+        results.push({
+          index: index,
+          content: emojiList[emojiName],
+          description: emojiName
+        });
+      return results;
+    }, []).sort((a, b) => {
+      return a.index - b.index
+    }).map((result) => {
+      // This sucks there must be a way to do this more efficiently
+      delete result.index;
+      return result;
+    });
+}
+
+function getCurrentTab(callback) {
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, (tabs) => {
+    return callback(tabs[0]);
+  });
+}
+
+function messageCurrentTab(message, callback) {
+  getCurrentTab((tab) => {
+    chrome.tabs.sendMessage(
+      tab.id,
+      Object.assign({}, {from: 'background'}, message),
+      callback
+    )
+  });
 }

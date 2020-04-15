@@ -1,6 +1,6 @@
 // content.js
 var emojiList, emojiRegex;
-emojiFound = 0;
+var emojiFound = 0;
 
 // Drivers //
 scanPage();
@@ -8,17 +8,15 @@ scanPage();
 // Listeners //
 chrome.storage.onChanged.addListener((changes, storageType) => {
   // If the emojiList changes on disk, rescan the page
-  if (changes.emojiList && (emojiList = changes.emojiList.newValue) && storageType == 'local') {
+  if (changes.emojiList && (emojiList = changes.emojiList.newValue) && storageType == 'local')
     scanPage();
-  }
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if ((request.from === 'popup') && (request.message === 'requestingPageInfo')) {
+  if (request.message === 'requestingPageInfo')
 		sendPageInfoToPopup(sendResponse);
-  }
 
-  if ((request.from === 'popup') && (request.message === 'requestingRescan')) {
+  if (request.message === 'requestingRescan') {
     scanPage((results) => {
       sendPageInfoToPopup(sendResponse, results.replacedEmoji.length, Object.keys(emojiList).length);
     });
