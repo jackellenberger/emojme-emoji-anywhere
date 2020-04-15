@@ -166,6 +166,7 @@ function matchingEmoji(emojiList, text) {
   return Object.keys(emojiList)
     .reduce((results, emojiName) => {
       if ((index = emojiName.indexOf(text)) > -1)
+        // TODO: update description to have emoji image in it?
         results.push({
           index: index,
           content: emojiList[emojiName],
