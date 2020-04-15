@@ -18,9 +18,18 @@
   "web_accessible_resources": ["emojilist.json"],
   "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' data: https://emoji.slack-edge.com",
   "permissions": ["storage", "activeTab", "tabs", "http://*/", "https://*/", "clipboardWrite", "clipboardRead"],
+  "icons": {
+    "16": "images/icon_16.png",
+    "32": "images/icon_32.png",
+    "64": "images/icon_64.png"
+  },
   "browser_action": {
-    "default_icon": "images/icon.png",
-    "default_title": "Slack Emoji Anywhere",
+    "default_icon": {
+      "16": "images/icon_16.png",
+      "32": "images/icon_32.png",
+      "64": "images/icon_64.png"
+    },
+    "default_title": "Slack Emoji Anywhere - : in omnibox to search",
     "default_popup": "popup.html"
   },
   "omnibox": {

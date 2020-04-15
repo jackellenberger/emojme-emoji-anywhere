@@ -1,17 +1,21 @@
 // Listeners //
-chrome.browserAction.onClicked.addListener(() => {
-  updatePageInfo();
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === 'setPageInfo')
+    setPageInfo(request.info);
 });
+
 
 document.addEventListener('DOMContentLoaded', () => {
   updatePageInfo();
 
-  document.getElementById("requestRescan").addEventListener('click', () => {
-    requestRescan();
+  document.getElementById("rescanPage").addEventListener('click', () => {
+    rescanPage();
   });
 
   document.getElementById("openCustomizePage").addEventListener('click', () => {
-    chrome.tabs.create({"url": "https://my.slack.com/customize/emoji"});
+    getOrCreateSlackTab((tab) => {
+      chrome.tabs.update(tab.id, {active: true}, () => {});
+    });
   });
 
   document.getElementById("getSlackToken").addEventListener('click', () => {
@@ -45,21 +49,15 @@ function messageCurrentTab(message, callback) {
 
 function updatePageInfo() {
   messageCurrentTab(
-    {message: 'requestingPageInfo'},
-    (info) => {
-      document.getElementById("emojiFound").innerHTML = info.emojiFound;
-      document.getElementById("emojiCount").innerHTML = info.emojiCount;
-    }
+    {message: 'getPageInfo'},
+    (info) => setPageInfo(info)
   );
 }
 
-function requestRescan() {
+function rescanPage() {
   messageCurrentTab(
-    {message: 'requestingRescan'},
-    (info) => {
-      document.getElementById("emojiFound").innerHTML = info.emojiFound;
-      document.getElementById("emojiCount").innerHTML = info.emojiCount;
-    }
+    {message: 'rescanPage'},
+    (info) => setPageInfo(info)
   );
 }
 
@@ -76,4 +74,23 @@ function getSlackToken() {
 
 function getSlackEmoji() {
   chrome.runtime.sendMessage({message: 'getSlackToken', callback: 'getSlackEmoji'});
+}
+
+function getOrCreateSlackTab(callback) {
+  chrome.tabs.query({
+    url: "*://*.slack.com/customize/*"
+  }, (existingTabs) => {
+    if (existingTabs.length > 0)
+      callback(existingTabs[0]);
+    else
+      chrome.tabs.create({'url': 'https://my.slack.com/customize/emoji'}, (tab) => {
+        callback(tab);
+      });
+  });
+}
+
+function setPageInfo(info) {
+  console.log(`received ${info}`)
+  document.getElementById("emojiFound").innerHTML = info.emojiFound;
+  document.getElementById("emojiCount").innerHTML = info.emojiCount;
 }

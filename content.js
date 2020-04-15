@@ -13,10 +13,9 @@ chrome.storage.onChanged.addListener((changes, storageType) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.message === 'requestingPageInfo')
+  if (request.message === 'getPageInfo')
 		sendPageInfoToPopup(sendResponse);
-
-  if (request.message === 'requestingRescan') {
+  else if (request.message === 'rescanPage') {
     scanPage((results) => {
       sendPageInfoToPopup(sendResponse, results.replacedEmoji.length, Object.keys(emojiList).length);
     });
@@ -126,5 +125,10 @@ function sendPageInfoToPopup(callback, emojiFoundOverride, emojiCountOverride) {
     emojiCount: emojiCountOverride || Object.keys(emojiList || []).length
   };
 
+  console.log(`responding to page with ${domInfo}`)
+  chrome.runtime.sendMessage({
+    message: 'setPageInfo',
+    info: domInfo
+  });
 	return callback(domInfo);
 }
