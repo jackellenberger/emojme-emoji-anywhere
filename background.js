@@ -81,6 +81,7 @@ function getSlackToken(callback) {
     }, (result) => {
       slackToken = result[0].match(/xoxs-\w*-\w*-\w*-\w*/)[0];
       console.debug(`slackToken: ${slackToken}`)
+      copyToClipboard(slackToken);
       // for some reason we need to re-query tabs to get the resolved url
       chrome.tabs.get(tab.id, (t) => {
         slackDomain = t.url.match(/https:\/\/(.*).slack.com\/customize\/emoji/)[1]
@@ -150,20 +151,24 @@ function suggestMatchingEmoji(partialEmoji, suggest) {
 function insertEmoji(emojiName) {
   getCurrentTab((tab) => {
     var emojiUrl = emojiList[emojiName]
-    var tArea = document.createElement('textarea');
-    document.body.appendChild(tArea);
-    tArea.value = emojiUrl;
-    tArea.focus();
-    tArea.select();
-    document.execCommand('copy');
+    copyToClipboard(emojiUrl);
 
     chrome.tabs.executeScript(tab.id, {matchAboutBlank: true, code:
       "document.execCommand('paste');"
     }, function() {
       if (chrome.runtime.lastError) console.log(chrome.runtime.lastError);
-      document.body.removeChild(tArea);
     });
   });
+}
+
+function copyToClipboard(str) {
+  var textArea = document.createElement('textarea');
+  document.body.appendChild(textArea);
+  textArea.value = str;
+  textArea.focus();
+  textArea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textArea);
 }
 
 // From https://stackoverflow.com/a/42916772
