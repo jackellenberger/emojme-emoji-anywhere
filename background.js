@@ -8,9 +8,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'openTab')
     openTab(request.url);
 
-  if (request.message === 'requestEmojiFileLoad')
-    loadEmojiListFromDisk(sendResponse);
-
   if (request.message === 'requestingAlert')
     alert(request.text);
 
@@ -37,9 +34,7 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
 });
 
 chrome.omnibox.onInputEntered.addListener((text) => {
-  // TODO check if emoji is emoji and not a url, if so swap it to url
-  text = text.replace(/:/, '');
-  insertEmoji(text);
+  insertEmoji(text.replace(/:/, ''));
 });
 
 
@@ -58,27 +53,14 @@ function setDefaultSuggestion() {
   });
 }
 
-function loadEmojiListFromDisk(callback) {
-  let url = chrome.runtime.getURL('emojilist.json');
-  fetch(url).then((result) => result.json()).then((emojilist) => {
-    emojiList = emojilist;
-    emojiCount = Object.keys(emojilist).length;
-
-    chrome.storage.local.set(
-      {emojiList},
-      () => {
-        console.debug(`emojme list updated; found ${emojiCount}`);
-        return callback({complete: true});
-      }
-    );
-  });
-}
-
 function getSlackToken(callback) {
   getOrCreateSlackTab((tab) => {
     chrome.tabs.executeScript(tab.id, {
       code: 'document.getElementsByTagName("html")[0].innerHTML'
     }, (result) => {
+      if (! result) {
+        return getSlackToken(callback);
+      }
       slackToken = result[0].match(/xoxs-\w*-\w*-\w*-\w*/)[0];
       console.debug(`slackToken: ${slackToken}`)
       copyToClipboard(slackToken);
@@ -126,10 +108,12 @@ function getSlackEmoji(slackDomain, slackToken, callback) {
     emojiCount = Object.keys(emojiList).length;
 
     chrome.storage.local.set(
-      {emojiList},
+      {emojiList, emojiCount},
       () => {
         console.debug(`emojme list updated; found ${emojiCount}`);
-        return callback({complete: true});
+        messageCurrentTab({message: 'rescanPage'}, () => {
+          return callback({complete: true});
+        });
       }
     );
   });

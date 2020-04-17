@@ -8,10 +8,18 @@
         border-radius: 5px;
         width: 20em;
       }
+      table {
+        width: 100%;
+      }
+      button {
+        width: 100%;
+      }
 		</style>
 	</head>
 	<body>
-    <h4 style="font-weight:bold; text-align:center;">Slack Emoji Anywhere</h4>
+    <h4 style="text-align:center;font-size:medium">Slack Emoji Anywhere</h4>
+    <div id="mostRecentEmoji" />
+    <hr/>
     <table border="0" cellpadding="2em" style="border-collapse:collapse;">
       <tr>
         <td nowrap>Emoji Found:</td>
@@ -21,6 +29,13 @@
         <td nowrap>Emoji Available:</td>
         <td align="right"><span id="emojiCount">0</span></td>
       </tr>
+      <tr>
+        <td nowrap>Pulled from:</td>
+        <td align="right"><span id="slackDomain">N/A</span></td>
+      </tr>
+    </table>
+    <hr/>
+    <table>
       <tr>
         <td><button id="rescanPage">Rescan Page</button></td>
       </tr>

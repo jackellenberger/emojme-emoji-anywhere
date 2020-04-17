@@ -17,17 +17,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		sendPageInfoToPopup(sendResponse);
   else if (request.message === 'rescanPage') {
     scanPage((results) => {
-      sendPageInfoToPopup(sendResponse, results.replacedEmoji.length, Object.keys(emojiList).length);
+      sendPageInfoToPopup(sendResponse, results.replacedEmoji.length);
     });
   }
 });
 
 // Helpers //
 function scanPage(callback) {
-  chrome.storage.local.get('emojiList', (result) => {
+  getStoredOrGlobal('emojiList', (result) => {
     if (!result || !(emojiList = result.emojiList)) {
-      // loadEmojiFile forces a write to chrome.store which is caught by a listener which calls scanPage()
-      return loadEmojiFile();
+      return;
     }
 
     emojiRegexString = Object.keys(emojiList)
@@ -113,22 +112,39 @@ function applyEmojiRegex(textNode) {
   });
 }
 
-function loadEmojiFile() {
-  chrome.runtime.sendMessage({from: 'content', message: "requestEmojiFileLoad"});
+function sendPageInfoToPopup(callback, emojiFoundOverride) {
+  getStoredOrGlobal(['emojiList', 'slackDomain'], (result) => {
+    var domInfo = {
+      emojiFound: emojiFoundOverride || emojiFound || 0,
+      emojiCount: Object.keys(result.emojiList).length || 0,
+      slackDomain: result.slackDomain || "N/A"
+    };
+
+    console.log(`responding to page with ${JSON.stringify(domInfo)}`)
+    chrome.runtime.sendMessage({
+      message: 'setPageInfo',
+      info: domInfo
+    });
+    return callback(domInfo);
+  });
 }
 
-function sendPageInfoToPopup(callback, emojiFoundOverride, emojiCountOverride) {
-  // Directly after a scan, we can specify the emojiFound and emojiList explicitly
-  // When not directly after a scan, we'll rely on chrome caching the variable in the window.
-	var domInfo = {
-    emojiFound: emojiFoundOverride || emojiFound || 0,
-    emojiCount: emojiCountOverride || Object.keys(emojiList || []).length
-  };
+function getStoredOrGlobal(variables, callback) {
+  var globalResults = {};
 
-  console.log(`responding to page with ${domInfo}`)
-  chrome.runtime.sendMessage({
-    message: 'setPageInfo',
-    info: domInfo
-  });
-	return callback(domInfo);
+  getFromStorage = [variables].flat().reduce((acc, v) => {
+    if (val = this[v])
+      globalResults[v] = val;
+    else
+      acc.push(v)
+    return acc;
+  }, [])
+
+  if (getFromStorage.length > 0) {
+    chrome.storage.local.get(getFromStorage, (storedResults) => {
+      callback(Object.assign({}, globalResults, storedResults));
+    });
+  } else {
+    callback(globalResults);
+  }
 }

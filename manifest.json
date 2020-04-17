@@ -15,7 +15,6 @@
     "scripts": ["background.js"],
     "persistent": false
   },
-  "web_accessible_resources": ["emojilist.json"],
   "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' data: https://emoji.slack-edge.com",
   "permissions": ["storage", "activeTab", "tabs", "http://*/", "https://*/", "clipboardWrite", "clipboardRead"],
   "icons": {
@@ -34,5 +33,9 @@
   },
   "omnibox": {
     "keyword": ":"
+  },
+  "options_ui": {
+    "page": "popup.html",
+    "chrome_style": true
   }
 }

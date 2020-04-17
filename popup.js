@@ -4,7 +4,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     setPageInfo(request.info);
 });
 
-
 document.addEventListener('DOMContentLoaded', () => {
   updatePageInfo();
 
@@ -39,32 +38,37 @@ function getCurrentTab(callback) {
 
 function messageCurrentTab(message, callback) {
   getCurrentTab((tab) => {
-    chrome.tabs.sendMessage(
-      tab.id,
-      Object.assign({}, {from: 'popup'}, message),
-      callback
-    )
+    if (typeof callback === 'undefined') {
+      chrome.tabs.sendMessage(
+        tab.id,
+        Object.assign({}, {from: 'popup'}, message)
+      );
+    } else {
+      chrome.tabs.sendMessage(
+        tab.id,
+        Object.assign({}, {from: 'popup'}, message),
+        callback
+      );
+    }
   });
 }
 
 function updatePageInfo() {
   messageCurrentTab(
-    {message: 'getPageInfo'},
-    (info) => setPageInfo(info)
+    {message: 'getPageInfo'}
   );
 }
 
 function rescanPage() {
   messageCurrentTab(
     {message: 'rescanPage'},
-    (info) => setPageInfo(info)
+    () => updatePageInfo()
   );
 }
 
 function requestAlert(alertText) {
   messageCurrentTab(
     {message: 'requestingAlert', text: alertText},
-    () => {}
   );
 }
 
@@ -90,7 +94,10 @@ function getOrCreateSlackTab(callback) {
 }
 
 function setPageInfo(info) {
-  console.log(`received ${info}`)
-  document.getElementById("emojiFound").innerHTML = info.emojiFound;
-  document.getElementById("emojiCount").innerHTML = info.emojiCount;
+  console.log(`setting pageInfo '${JSON.stringify(info)}'`)
+  if (info) {
+    document.getElementById("emojiFound").innerHTML = info.emojiFound;
+    document.getElementById("emojiCount").innerHTML = info.emojiCount;
+    document.getElementById("slackDomain").innerHTML = info.slackDomain;
+  }
 }
