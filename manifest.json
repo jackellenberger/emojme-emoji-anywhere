@@ -33,9 +33,5 @@
   },
   "omnibox": {
     "keyword": ":"
-  },
-  "options_ui": {
-    "page": "popup.html",
-    "chrome_style": true
   }
 }
