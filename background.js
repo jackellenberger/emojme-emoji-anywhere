@@ -135,12 +135,32 @@ function suggestMatchingEmoji(partialEmoji, suggest) {
 function insertEmoji(emojiName) {
   getCurrentTab((tab) => {
     var emojiUrl = emojiList[emojiName]
-    copyToClipboard(emojiUrl);
+    chrome.storage.local.get('insertMode', (result) => {
+      switch (result.insertMode) {
+        case "insertMdImage":
+          payload = `![${emojiName}](${emojiUrl})`
+          break;
+        case "insertMdLink":
+          payload = `[${emojiName}](${emojiUrl})`
+          break;
+        case "insertHtmlImageSmall":
+          payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:" style="height: 1.5em; margin-bottom: -0.3em;">`
+          break;
+        case "insertHtmlImageFull":
+          payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:">`
+          break;
+        default: //insertUrl || undefined
+          payload = `${emojiUrl}`
+          break;
+      }
 
-    chrome.tabs.executeScript(tab.id, {matchAboutBlank: true, code:
-      "document.execCommand('paste');"
-    }, function() {
-      if (chrome.runtime.lastError) console.log(chrome.runtime.lastError);
+      copyToClipboard(payload);
+
+      chrome.tabs.executeScript(tab.id, {matchAboutBlank: true, code:
+        "document.execCommand('paste');"
+      }, function() {
+        if (chrome.runtime.lastError) console.log(chrome.runtime.lastError);
+      });
     });
   });
 }

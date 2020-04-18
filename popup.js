@@ -24,33 +24,33 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById("getSlackEmoji").addEventListener('click', () => {
     getSlackEmoji();
   });
+
+  document.getElementsByName("insertMode").forEach((node) => {
+    node.addEventListener('click', () => {
+      handleInsertModeChange();
+    });
+  })
 });
 
-// Helpers //
-function getCurrentTab(callback) {
-  chrome.tabs.query({
-    active: true,
-    currentWindow: true
-  }, (tabs) => {
-    return callback(tabs[0]);
+// Actions //
+function handleInsertModeChange(insertMode) {
+  document.getElementsByName("insertMode").forEach((node) => {
+    if (node.checked) {
+      return chrome.storage.local.set({"insertMode": node.id});
+    }
   });
 }
 
-function messageCurrentTab(message, callback) {
-  getCurrentTab((tab) => {
-    if (typeof callback === 'undefined') {
-      chrome.tabs.sendMessage(
-        tab.id,
-        Object.assign({}, {from: 'popup'}, message)
-      );
-    } else {
-      chrome.tabs.sendMessage(
-        tab.id,
-        Object.assign({}, {from: 'popup'}, message),
-        callback
-      );
-    }
-  });
+function setPageInfo(info) {
+  console.log(`setting pageInfo '${JSON.stringify(info)}'`)
+  if (info) {
+    document.getElementById("emojiFound").innerHTML = info.emojiFound;
+    document.getElementById("emojiCount").innerHTML = info.emojiCount;
+    document.getElementById("slackDomain").innerHTML = info.slackDomain;
+    chrome.storage.local.get("insertMode", (result) => {
+      document.getElementById(result.insertMode).checked = true;
+    });
+  }
 }
 
 function updatePageInfo() {
@@ -79,6 +79,34 @@ function getSlackEmoji() {
   chrome.runtime.sendMessage({message: 'getSlackToken', callback: 'getSlackEmoji'});
 }
 
+
+// Helpers //
+function getCurrentTab(callback) {
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, (tabs) => {
+    return callback(tabs[0]);
+  });
+}
+
+function messageCurrentTab(message, callback) {
+  getCurrentTab((tab) => {
+    if (typeof callback === 'undefined') {
+      chrome.tabs.sendMessage(
+        tab.id,
+        Object.assign({}, {from: 'popup'}, message)
+      );
+    } else {
+      chrome.tabs.sendMessage(
+        tab.id,
+        Object.assign({}, {from: 'popup'}, message),
+        callback
+      );
+    }
+  });
+}
+
 function getOrCreateSlackTab(callback) {
   chrome.tabs.query({
     url: "*://*.slack.com/customize/*"
@@ -90,13 +118,4 @@ function getOrCreateSlackTab(callback) {
         callback(tab);
       });
   });
-}
-
-function setPageInfo(info) {
-  console.log(`setting pageInfo '${JSON.stringify(info)}'`)
-  if (info) {
-    document.getElementById("emojiFound").innerHTML = info.emojiFound;
-    document.getElementById("emojiCount").innerHTML = info.emojiCount;
-    document.getElementById("slackDomain").innerHTML = info.slackDomain;
-  }
 }

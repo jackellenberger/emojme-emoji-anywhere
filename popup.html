@@ -57,9 +57,30 @@
       <tr>
         <td><button id="getSlackEmoji">Refresh Emoji</button></td>
       </tr>
+    </table>
+    <hr/>
+    <table>
+      <tr>
+        <td>Insert emoji as:</td>
+        <td>
+          <input type="radio" name="insertMode" id="insertUrl" />
+          <label for="insertUrl">url</label><br/>
+          <input type="radio" name="insertMode" id="insertMdImage" />
+          <label for="insertMdImage">markdown image</label><br/>
+          <input type="radio" name="insertMode" id="insertMdLink" />
+          <label for="insertMdLink">markdown link</label><br/>
+          <input type="radio" name="insertMode" id="insertHtmlImageSmall" />
+          <label for="insertHtmlImageSmall">html image (small)</label><br/>
+          <input type="radio" name="insertMode" id="insertHtmlImageFull" />
+          <label for="insertHtmlImageFull">html image (full)</label><br/>
+          <!-- <input type="radio" name="insertMode" id="customMode"> -->
+          <!-- <label for="customMode">html image<label/><br/> -->
+        </td>
+      </tr>
       <!-- TODO: un-emojify page -->
       <!-- TODO: never emojify page -->
       <!-- TODO: dsable extension -->
     </table>
+    <hr/>
 	</body>
 </html>
