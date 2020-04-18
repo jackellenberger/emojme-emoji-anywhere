@@ -61,8 +61,7 @@ function updatePageInfo() {
 
 function rescanPage() {
   messageCurrentTab(
-    {message: 'rescanPage'},
-    () => updatePageInfo()
+    {message: 'rescanPage'}
   );
 }
 

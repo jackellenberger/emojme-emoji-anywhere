@@ -1,5 +1,6 @@
 // content.js
 var emojiList, emojiRegex;
+// A global emojiFound count ensures that multiple rescans compound the number of found emoji
 var emojiFound = 0;
 
 // Drivers //
@@ -9,15 +10,17 @@ scanPage();
 chrome.storage.onChanged.addListener((changes, storageType) => {
   // If the emojiList changes on disk, rescan the page
   if (changes.emojiList && (emojiList = changes.emojiList.newValue) && storageType == 'local')
-    scanPage();
+    scanPage((results) => {
+      sendPageInfoToPopup(results.replacedEmoji.length);
+    });
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'getPageInfo')
-		sendPageInfoToPopup(sendResponse);
+		sendPageInfoToPopup();
   else if (request.message === 'rescanPage') {
     scanPage((results) => {
-      sendPageInfoToPopup(sendResponse, results.replacedEmoji.length);
+      sendPageInfoToPopup();
     });
   }
 });
@@ -67,7 +70,7 @@ function traverseDom(node, emojiRegex) {
   }
 
   console.time('traverseDom.applyEmojiRegex');
-  replacedEmoji = acceptedNodes.map((textNode) => applyEmojiRegex(textNode));
+  replacedEmoji = acceptedNodes.map((textNode) => replaceEmojiTextNode(textNode));
   console.timeEnd('traverseDom.applyEmojiRegex');
 
   console.debug('Replaced emoji: ' + replacedEmoji.length);
@@ -77,23 +80,22 @@ function traverseDom(node, emojiRegex) {
 }
 
 // Given a text node, find all emoji we know about and replace the text with the image, a la slack
-function applyEmojiRegex(textNode) {
-  var offset = 0;
+function replaceEmojiTextNode(textNode) {
   var fulltext = textNode.nodeValue;
   var matches = Array.from(fulltext.matchAll(emojiRegex));
 
-  return matches.map((match) => {
+  // Reverse matches to replace the last instance first and not worry about offsets
+  return matches.reverse().map((match) => {
     qualifiedEmojiName = match[0] // :emoji-name:
     emojiName = qualifiedEmojiName.replace(/:/g, ''); // emoji-name
     emojiUrl = emojiList[emojiName];
 
-    // Offset = the index of the first character of the emoji
-    //  + the length of the emoji name
-    //  - how many characters we have already hacked off this text node
-    offset = match.index + qualifiedEmojiName.length - offset;
-
-    remainingTextNode = textNode.splitText(offset);
-    textNode.nodeValue = textNode.nodeValue.replace(qualifiedEmojiName, '')
+    // e.g. for text node "lorem :buttbrow: ipsum"
+    // match.index = 6
+    // textNode.nodeValue[match.index] === ":"
+    // remainingTextNode.nodeValue === ":buttbrow: ipsum"
+    remainingTextNode = textNode.splitText(match.index); //:buttbrow: ipsum
+    remainingTextNode.nodeValue = remainingTextNode.nodeValue.replace(qualifiedEmojiName, '')
 
     imageNode = document.createElement('img');
     imageNode.src = emojiUrl;
@@ -103,7 +105,6 @@ function applyEmojiRegex(textNode) {
     imageNode.setAttribute('aria-label', qualifiedEmojiName)
 
     textNode.parentElement.insertBefore(imageNode, remainingTextNode)
-    textNode = remainingTextNode;
 
     emojiFound += 1; //TODO replace
     console.debug("Found and replaced " + qualifiedEmojiName);
@@ -112,10 +113,10 @@ function applyEmojiRegex(textNode) {
   });
 }
 
-function sendPageInfoToPopup(callback, emojiFoundOverride) {
+function sendPageInfoToPopup() {
   getStoredOrGlobal(['emojiList', 'slackDomain'], (result) => {
     var domInfo = {
-      emojiFound: emojiFoundOverride || emojiFound || 0,
+      emojiFound: emojiFound,
       emojiCount: Object.keys(result.emojiList).length || 0,
       slackDomain: result.slackDomain || "N/A"
     };
@@ -125,7 +126,6 @@ function sendPageInfoToPopup(callback, emojiFoundOverride) {
       message: 'setPageInfo',
       info: domInfo
     });
-    return callback(domInfo);
   });
 }
 
