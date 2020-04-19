@@ -106,7 +106,7 @@ function replaceEmojiTextNode(textNode) {
 
     textNode.parentElement.insertBefore(imageNode, remainingTextNode)
 
-    emojiFound += 1; //TODO replace
+    emojiFound += 1;
     console.debug("Found and replaced " + qualifiedEmojiName);
 
     return {emojiName, emojiUrl};

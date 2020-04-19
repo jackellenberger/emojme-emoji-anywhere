@@ -34,7 +34,7 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
 });
 
 chrome.omnibox.onInputEntered.addListener((text) => {
-  insertEmoji(text.replace(/:/, ''));
+  insertEmoji(text.replace(/:/g, ''));
 });
 
 
@@ -123,6 +123,14 @@ function suggestMatchingEmoji(partialEmoji, suggest) {
   getStoredOrGlobal('emojiList', (result) => {
     emojiList = result.emojiList;
     matchingEmoji = getMatchingEmoji(emojiList, partialEmoji)
+    if (matchingEmoji && (exactMatch = matchingEmoji[0]) && exactMatch.content === partialEmoji) {
+      // This puts an additional copy of exact matches in the array of suggestions.
+      // This is necessary because exact matches in the omnibox do not print
+      // description hint text, which confuses the user (me) into thinking that
+      // there is no exact match.
+      matchingEmoji.unshift({...exactMatch, content: `:${exactMatch.content}:`});
+    }
+
     getCurrentTab((tab) => {
       if (firstMatchingEmoji = matchingEmoji[0]) {
         setBrowserIconToUrl(emojiList[firstMatchingEmoji.content]);
@@ -212,7 +220,7 @@ function getMatchingEmoji(emojiList, text) {
       }
       return results;
     }, []).sort((a, b) => {
-      return a.index - b.index
+      return a.index - b.index;
     }).map((result) => {
       // This sucks there must be a way to do this more efficiently
       delete result.index;
