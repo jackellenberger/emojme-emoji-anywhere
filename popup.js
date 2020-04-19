@@ -54,7 +54,7 @@ function setPageInfo(info) {
       chrome.browserAction.setBadgeText({text: ''});
 
     chrome.storage.local.get("insertMode", (result) => {
-      document.getElementById(result.insertMode).checked = true;
+      document.getElementById(result.insertMode || 'insertUrl').checked = true;
     });
   }
 }

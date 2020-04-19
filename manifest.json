@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
-  "name": "Slack Emoji Anywhere",
-  "version": "0.2",
+  "name": "Emojme: Emoji Anywhere",
+  "version": "1.0.0",
+  "description": "Find :emoji: in web pages and replace them with the little image you're used to seeing in slack",
+  "author": "Jack Ellenberger <jellenberger@uchicago.edu>",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": [
-        "content.js"
-      ]
+      "js": ["content.js"]
     }
   ],
   "background": {
@@ -27,7 +27,7 @@
       "32": "images/icon_32.png",
       "64": "images/icon_64.png"
     },
-    "default_title": "Slack Emoji Anywhere - : in omnibox to search",
+    "default_title": "Emojme: Emoji Anywhere -- user ':' in omnibox to search",
     "default_popup": "popup.html"
   },
   "omnibox": {

@@ -1,4 +1,4 @@
-# Slack Emoji Anywhere - Chrome Extension
+# Emojme: Emoji Anywhere - Chrome Extension
 
 What if your slack emoji came with you on any webpage you went to? What if you could type :buttbrowdotpng: in your github commit and see ![buttbrowdotpng](https://emoji.slack-edge.com/T7ZGGRLGN/buttbrowdotpng/d923b0305524f93e.gif), just as sassy as you intended? That's a world I want to live in. Now you can too!
 
