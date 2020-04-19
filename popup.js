@@ -47,6 +47,12 @@ function setPageInfo(info) {
     document.getElementById("emojiFound").innerHTML = info.emojiFound;
     document.getElementById("emojiCount").innerHTML = info.emojiCount;
     document.getElementById("slackDomain").innerHTML = info.slackDomain;
+
+    if (info.emojiCount == 0)
+      chrome.browserAction.setBadgeText({text: info.emojiCount.toString()});
+    else
+      chrome.browserAction.setBadgeText({text: ''});
+
     chrome.storage.local.get("insertMode", (result) => {
       document.getElementById(result.insertMode).checked = true;
     });
