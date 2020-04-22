@@ -155,7 +155,7 @@ function insertEmoji(emojiName) {
           payload = `[${emojiName}](${emojiUrl})`
           break;
         case "insertHtmlImageSmall":
-          payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:" style="height: 1.5em; margin-bottom: -0.3em;">`
+          payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:" height="21" align="top">`
           break;
         case "insertHtmlImageFull":
           payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:">`
