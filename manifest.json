@@ -19,13 +19,15 @@
   "icons": {
     "16": "images/icon_16.png",
     "32": "images/icon_32.png",
-    "64": "images/icon_64.png"
+    "64": "images/icon_64.png",
+    "128": "images/icon_128.png"
   },
   "browser_action": {
     "default_icon": {
       "16": "images/icon_16.png",
       "32": "images/icon_32.png",
-      "64": "images/icon_64.png"
+      "64": "images/icon_64.png",
+      "128": "images/icon_128.png"
     },
     "default_title": "Emojme: Emoji Anywhere -- user ':' in omnibox to search",
     "default_popup": "popup.html"
