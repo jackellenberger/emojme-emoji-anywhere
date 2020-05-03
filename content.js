@@ -117,7 +117,7 @@ function sendPageInfoToPopup() {
   getStoredOrGlobal(['emojiList', 'slackDomain'], (result) => {
     var domInfo = {
       emojiFound: emojiFound,
-      emojiCount: Object.keys(result.emojiList).length || 0,
+      emojiCount: result.emojiList ? Object.keys(result.emojiList).length : 0,
       slackDomain: result.slackDomain || "N/A"
     };
 

@@ -47,16 +47,21 @@ function setPageInfo(info) {
     document.getElementById("emojiFound").innerHTML = info.emojiFound;
     document.getElementById("emojiCount").innerHTML = info.emojiCount;
     document.getElementById("slackDomain").innerHTML = info.slackDomain;
-
-    if (info.emojiCount == 0)
-      chrome.browserAction.setBadgeText({text: info.emojiCount.toString()});
-    else
-      chrome.browserAction.setBadgeText({text: ''});
-
-    chrome.storage.local.get("insertMode", (result) => {
-      document.getElementById(result.insertMode || 'insertUrl').checked = true;
-    });
   }
+
+  if (document.getElementById("emojiCount").innerHTML === "0") {
+    chrome.browserAction.setBadgeText({text: `0`});
+    var e = document.getElementById("getSlackEmoji");
+    setInterval(() => {
+      e.style.filter = (e.style.filter == 'brightness(80%)' ? 'brightness(100%)' : 'brightness(80%)');
+    }, 1000);
+  } else {
+    chrome.browserAction.setBadgeText({text: ''});
+  }
+
+  chrome.storage.local.get("insertMode", (result) => {
+    document.getElementById(result.insertMode || 'insertUrl').checked = true;
+  });
 }
 
 function updatePageInfo() {
