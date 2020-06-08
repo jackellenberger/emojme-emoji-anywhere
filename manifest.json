@@ -1,17 +1,25 @@
 {
   "manifest_version": 2,
   "name": "Emojme: Emoji Anywhere",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Find :emoji: in web pages and replace them with the little image you're used to seeing in slack",
   "author": "Jack Ellenberger <jellenberger@uchicago.edu>",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": [
+        "lib/storageHelpers.js",
+        "content.js"
+      ]
     }
   ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "lib/matchingEmoji.js",
+      "lib/storageHelpers.js",
+      "lib/tabHelpers.js",
+      "background.js"
+    ],
     "persistent": false
   },
   "content_security_policy": "script-src 'self'; object-src 'self'; img-src 'self' data: https://emoji.slack-edge.com",
