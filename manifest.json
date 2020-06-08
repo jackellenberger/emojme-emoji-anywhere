@@ -8,16 +8,19 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "lib/storageHelpers.js",
+        "lib/jquery.js",
+        "lib/jquery.textcomplete.js",
+        "lib/emoji.js",
+        "lib/storage.js",
         "content.js"
       ]
     }
   ],
   "background": {
     "scripts": [
-      "lib/matchingEmoji.js",
-      "lib/storageHelpers.js",
-      "lib/tabHelpers.js",
+      "lib/emoji.js",
+      "lib/storage.js",
+      "lib/tabs.js",
       "background.js"
     ],
     "persistent": false

@@ -143,28 +143,9 @@ function suggestEmojiMatchResult(partialEmoji, suggest) {
   });
 }
 
-function insertEmoji(emojiName) {
+function copyAndPasteEmoji(emojiName) {
   getCurrentTab((tab) => {
-    var emojiUrl = emojiList[emojiName]
-    chrome.storage.local.get('insertMode', (result) => {
-      switch (result.insertMode) {
-        case "insertMdImage":
-          payload = `![${emojiName}](${emojiUrl})`
-          break;
-        case "insertMdLink":
-          payload = `[${emojiName}](${emojiUrl})`
-          break;
-        case "insertHtmlImageSmall":
-          payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:" height="21" align="top">`
-          break;
-        case "insertHtmlImageFull":
-          payload = `<img src="${emojiUrl}" alt="${emojiName}" title="${emojiName}" aria-label=":${emojiName}:">`
-          break;
-        default: //insertUrl || undefined
-          payload = `${emojiUrl}`
-          break;
-      }
-
+    withInsertableEmoji(emojiList, emojiName, (payload) => {
       copyToClipboard(payload);
 
       chrome.tabs.executeScript(tab.id, {matchAboutBlank: true, code:

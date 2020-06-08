@@ -4,29 +4,30 @@ var emojiList, emojiRegex;
 var emojiFound = 0;
 
 // Drivers //
-scanPage();
+scanAndReplaceEmojiText();
+configureTextComplete();
 
 // Listeners //
 chrome.storage.onChanged.addListener((changes, storageType) => {
   // If the emojiList changes on disk, rescan the page
   if (changes.emojiList && (emojiList = changes.emojiList.newValue) && storageType == 'local')
-    scanPage((results) => {
+    scanAndReplaceEmojiText((results) => {
       sendPageInfoToPopup(results.replacedEmoji.length);
     });
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'getPageInfo')
-		sendPageInfoToPopup();
-  else if (request.message === 'rescanPage') {
-    scanPage((results) => {
+    sendPageInfoToPopup();
+  else if (request.message === 'rescanAndReplaceEmojiText') {
+    scanAndReplaceEmojiText((results) => {
       sendPageInfoToPopup();
     });
   }
 });
 
-// Helpers //
-function scanPage(callback) {
+// Actions //
+function scanAndReplaceEmojiText(callback) {
   getStoredOrGlobal('emojiList', (result) => {
     if (!result || !(emojiList = result.emojiList)) {
       return;
@@ -113,6 +114,34 @@ function replaceEmojiTextNode(textNode) {
   });
 }
 
+function configureTextComplete() {
+  getStoredOrGlobal('emojiList', (result) => {
+    if (!result || !(emojiList = result.emojiList)) {
+      return;
+    }
+
+    $('textarea, textbox, text, .editable').textcomplete([{
+      id: 'emojme-emoji-anywhere',
+      match: /\B:([\-+\w]+)$/,
+      search: ((term, callback) => {
+        matchingEmoji = getMatchingEmoji(emojiList, term)
+        callback($.map(matchingEmoji, ((result) => {
+          return result.emojiName.indexOf(term) === 0 ? result : null;
+        })));
+      }),
+      template: function (result) {
+        return templateHtmlEmoji(result.emojiUrl, result.emojiName)
+      },
+      replace: function (result) {
+        return withInsertableEmoji(emojiList, result.emojiName);
+      },
+      index: 1,
+      maxCount: 5,
+    }]);
+  });
+}
+
+// Helpers //
 function sendPageInfoToPopup() {
   getStoredOrGlobal(['emojiList', 'slackDomain'], (result) => {
     var domInfo = {
