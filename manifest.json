@@ -1,13 +1,20 @@
 {
   "manifest_version": 2,
   "name": "Emojme: Emoji Anywhere",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Find :emoji: in web pages and replace them with the little image you're used to seeing in slack",
   "author": "Jack Ellenberger <jellenberger@uchicago.edu>",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": [
+        "content.js",
+        "vendor/jquery.js",
+        "vendor/jquery.textcomplete.js"
+      ],
+      "css": [
+        "styles/main.css"
+      ]
     }
   ],
   "background": {

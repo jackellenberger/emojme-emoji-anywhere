@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Helpers //
+// Actions //
 function scanPage(callback) {
   getStoredOrGlobal('emojiList', (result) => {
     if (!result || !(emojiList = result.emojiList)) {
@@ -113,6 +113,43 @@ function replaceEmojiTextNode(textNode) {
   });
 }
 
+// From https://github.com/ritz078/emoji-assistant
+function setupEmojiAssistant() {
+  const hostname = window.location.hostname
+
+  // prevent for the textareas of github.com
+  if (hostname === 'github.com') {
+    $('textarea').addClass('es-disabled')
+  }
+
+  $input = $('div[contenteditable="true"],input[type=text], textarea').not('.es-disabled')
+
+  $input
+    .textcomplete([{
+      id: 'emoji-autosuggest',
+      match: /\B:([\-+\w]*)$/,
+      search: function (term, callback) {
+        getSuggestions(term, callback)
+      },
+      // template: function (emoji) {
+      //   const service = (hostname === 'twitter.com' || hostname === 'tweetdeck.twitter.com')
+      //     && emoji && emoji.has_img_twitter
+      //   return getTemplate(emoji, service)
+      // },
+      replace: function (value) {
+        return getEmoji(value.short_name) + ' '
+      },
+      index: 1
+    }], {
+      dropdownClassName: 'emoji-assistant',
+      height: 265,
+      maxCount: 14,
+      placementStr: 'top',
+      debounce: 400,
+      zIndex: '999999'
+    })
+}
+
 function sendPageInfoToPopup() {
   getStoredOrGlobal(['emojiList', 'slackDomain'], (result) => {
     var domInfo = {
@@ -129,6 +166,7 @@ function sendPageInfoToPopup() {
   });
 }
 
+// Helpers //
 function getStoredOrGlobal(variables, callback) {
   var globalResults = {};
 
