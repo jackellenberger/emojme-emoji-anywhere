@@ -30,11 +30,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.omnibox.onInputChanged.addListener((text, suggest) => {
-  suggestMatchingEmoji(text, suggest);
+  suggestEmojiMatchResult(text, suggest);
 });
 
 chrome.omnibox.onInputEntered.addListener((text) => {
-  suggestMatchingEmoji(text, (suggestions) => {
+  suggestEmojiMatchResult(text, (suggestions) => {
     if (suggestions.length > 0)
       insertEmoji(suggestions[0].content.replace(/:/g, ''));
   });
@@ -122,23 +122,23 @@ function getSlackEmoji(slackDomain, slackToken, callback) {
   });
 }
 
-function suggestMatchingEmoji(partialEmoji, suggest) {
+function suggestEmojiMatchResult(partialEmoji, suggest) {
   getStoredOrGlobal('emojiList', (result) => {
     emojiList = result.emojiList;
-    matchingEmoji = getMatchingEmoji(emojiList, partialEmoji)
-    if (matchingEmoji && (exactMatch = matchingEmoji[0]) && exactMatch.content === partialEmoji) {
+    matchingEmojiResults = getEmojiMatchResults(emojiList, partialEmoji)
+    if (matchingEmojiResults && (exactMatch = matchingEmojiResults[0]) && exactMatch.content === partialEmoji) {
       // This puts an additional copy of exact matches in the array of suggestions.
       // This is necessary because exact matches in the omnibox do not print
       // description hint text, which confuses the user (me) into thinking that
       // there is no exact match.
-      matchingEmoji.unshift({...exactMatch, content: `:${exactMatch.content}:`});
+      matchingEmojiResults.unshift({...exactMatch, content: `:${exactMatch.content}:`});
     }
 
     getCurrentTab((tab) => {
-      if (firstMatchingEmoji = matchingEmoji[0]) {
+      if (firstMatchingEmoji = matchingEmojiResults[0]) {
         setBrowserIconToUrl(emojiList[firstMatchingEmoji.content]);
       }
-      suggest(matchingEmoji);
+      suggest(matchingEmojiResults);
     });
   });
 }
@@ -188,7 +188,7 @@ function copyToClipboard(str) {
 
 // From https://stackoverflow.com/a/42916772
 function setBrowserIconToUrl(url) {
-  urlToData(url, (dataUrl) => {
+  getDataFromUrl(url, (dataUrl) => {
     img = new Image();
     img.onload = (() => {
       canvas = document.createElement('canvas');
@@ -208,29 +208,6 @@ function setBrowserIconToUrl(url) {
 }
 
 // Helpers //
-function getMatchingEmoji(emojiList, text) {
-  return Object.keys(emojiList)
-    .reduce((results, emojiName) => {
-      if ((index = emojiName.indexOf(text)) > -1) {
-        emojiUrl = emojiList[emojiName]
-        content = emojiName
-        description = `<match>${emojiName}</match> - <dim>${emojiUrl}</dim>`
-        results.push({
-          index: index,
-          content: content,
-          description: description
-        });
-      }
-      return results;
-    }, []).sort((a, b) => {
-      return a.index - b.index;
-    }).map((result) => {
-      // This sucks there must be a way to do this more efficiently
-      delete result.index;
-      return result;
-    });
-}
-
 function getCurrentTab(callback) {
   chrome.tabs.query({
     active: true,
@@ -250,7 +227,7 @@ function messageCurrentTab(message, callback) {
   });
 }
 
-function urlToData(url, callback){
+function getDataFromUrl(url, callback){
   var xhr = new XMLHttpRequest();
   xhr.open('get', url);
   xhr.responseType = 'blob';
@@ -265,40 +242,4 @@ function urlToData(url, callback){
   };
 
   xhr.send();
-}
-
-function getStoredOrGlobal(variables, callback) {
-  var globalResults = {};
-
-  getFromStorage = [variables].flat().reduce((acc, v) => {
-    if (val = this[v])
-      globalResults[v] = val;
-    else
-      acc.push(v)
-    return acc;
-  }, [])
-
-  if (getFromStorage.length > 0) {
-    chrome.storage.local.get(getFromStorage, (storedResults) => {
-      callback(Object.assign({}, globalResults, storedResults));
-    });
-  } else {
-    callback(globalResults);
-  }
-}
-
-function getOrCreateSlackTab(callback) {
-  chrome.tabs.query({
-    url: "*://*.slack.com/customize/*"
-  }, (existingTabs) => {
-    if (existingTabs.length > 0)
-      callback(existingTabs[0]);
-    else
-      chrome.tabs.create({'url': 'https://my.slack.com/customize/emoji'}, (tab) => {
-        chrome.tabs.onUpdated.addListener((tabId, changeInfo, changedTab) => {
-          if (tabId == tab.id && changeInfo.status === 'complete')
-            callback(tab);
-        });
-      });
-  });
 }
