@@ -87,8 +87,8 @@ function replaceEmojiTextNode(textNode) {
 
   // Reverse matches to replace the last instance first and not worry about offsets
   return matches.reverse().map((match) => {
-    qualifiedEmojiName = match[0] // :emoji-name:
-    emojiName = qualifiedEmojiName.replace(/:/g, ''); // emoji-name
+    qualifiedEmojiName = match[0]; // :emoji-name:
+    emojiName = qualifiedEmojiName.replace(/:/g, '').toLowerCase(); // emoji-name
     emojiUrl = emojiList[emojiName];
 
     // e.g. for text node "lorem :buttbrow: ipsum"
