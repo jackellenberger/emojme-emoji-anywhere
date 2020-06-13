@@ -36,7 +36,7 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
 chrome.omnibox.onInputEntered.addListener((text) => {
   suggestEmojiMatchResult(text, (suggestions) => {
     if (suggestions.length > 0)
-      insertEmoji(suggestions[0].content.replace(/:/g, ''));
+      copyAndPasteEmoji(suggestions[0].content.replace(/:/g, ''));
   });
 });
 
