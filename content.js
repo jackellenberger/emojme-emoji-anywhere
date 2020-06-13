@@ -115,7 +115,8 @@ function replaceEmojiTextNode(textNode) {
 }
 
 function configureTextComplete() {
-  getStoredOrGlobal('emojiList', (result) => {
+  getStoredOrGlobal(['emojiList', 'insertMode'], (result) => {
+    insertMode = result.insertMode;
     if (!result || !(emojiList = result.emojiList)) {
       return;
     }
@@ -133,7 +134,7 @@ function configureTextComplete() {
         return templateHtmlEmoji(result.emojiUrl, result.emojiName)
       },
       replace: function (result) {
-        return withInsertableEmoji(emojiList, result.emojiName);
+        return getInsertableEmoji(insertMode, result.emojiUrl, result.emojiName);
       },
       index: 1,
       maxCount: 5,
