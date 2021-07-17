@@ -10,6 +10,10 @@ To aid in this, the extension gives helpful shortcuts to grab a slack user token
 
 The extension also allows you to search for and insert emoji using the chrome `omnibar`. Just type `cmd+l` to focus on the bar, then `:, tab` and you'll be able to search existing emoji. When you find what you're looking for, press enter to copy it to your clipboard and enter it under your cursor. You can paste them in either as the direct url, a markdown link to the url, a markdown image (works great on github PRs), or html image.
 
+### Oh my god you're stealing my cookies
+
+Well, _you're_ stealing your cookies. It's a serious and legitimate security risk, and using this extension probably makes your slack interactions less secure. I comfort myself with the fact that Slack operated without cookie based authentication for 8 years (until roughly July 2021), so for the 3 years or so that emojme and that somewhat lacking auth scheme were coexisting, you were equally if not more unsafe.
+
 ## Installation
 
 At time of writing, the slack emoji anywhere extension is only available unpacked, not through the chrome web store. There are [all kinds](https://stackoverflow.com/a/24577660/5261045) of [guides](https://developer.chrome.com/extensions/getstarted#manifest) to get that done, but the short version is to download or clone this repository, open `chrome://extensions`, turn on `Developer Mode`, and click `Load Unpacked` in the upper right. Have fun! :goatbutt:
