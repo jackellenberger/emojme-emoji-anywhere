@@ -1,4 +1,5 @@
 // background.js
+const slackCookieName = 'd'; // Slack why??
 var emojiList, slackDomain, slackToken;
 
 setDefaultSuggestion();
@@ -11,10 +12,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'requestingAlert')
     alert(request.text);
 
-  if (request.message === 'getSlackToken') {
-    getSlackToken((result) => {
+  if (request.message === 'getSlackAuth') {
+    getSlackAuth((slackAuth) => {
       if (request.callback === 'alert')
-        alert(result.slackToken);
+        alert(`The following should have been copied to your clipboard: \n${JSON.stringify(slackAuth)}`);
       else if (request.callback === 'getSlackEmoji')
         getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
       else
@@ -56,31 +57,74 @@ function setDefaultSuggestion() {
   });
 }
 
-function getSlackToken(callback) {
+function getSlackAuth(callback) {
   getOrCreateSlackTab((tab) => {
     chrome.tabs.executeScript(tab.id, {
       code: 'document.getElementsByTagName("html")[0].innerHTML'
-    }, (result) => {
-      if (! result) {
-        return getSlackToken(callback);
+    }, (pageContents) => {
+      var slackAuth = {};
+
+      if (! pageContents) {
+        return getSlackAuth(callback);
       }
-      slackToken = result[0].match(/xoxs-\w*-\w*-\w*-\w*/)[0];
-      console.debug(`slackToken: ${slackToken}`)
-      copyToClipboard(slackToken);
+
+      slackToken = (pageContents[0].match(/xoxs-\w*-\w*-\w*-\w*/) ||
+        pageContents[0].match(/xoxc-\w*-\w*-\w*-\w*/))[0];
+
+      if (! slackToken) {
+        console.debug('unable to access slackToken!');
+        return callback(slackAuth);
+      } else {
+        console.debug(`slackToken: ${slackToken}`)
+        slackAuth.token = slackToken;
+      }
+
       // for some reason we need to re-query tabs to get the resolved url
       chrome.tabs.get(tab.id, (t) => {
         slackDomain = t.url.match(/https:\/\/(.*).slack.com\/customize\/emoji/)[1]
-        console.debug(`slackDomain: ${slackDomain}`)
-        chrome.storage.local.set(
-          {slackToken, slackDomain},
-          () => callback({slackToken, slackDomain})
-        );
+
+        if (! slackDomain) {
+          console.debug('unable to access slackDomain!');
+          return callback(slackAuth);
+        } else {
+          console.debug(`slackDomain: ${slackDomain}`)
+          slackAuth.domain = slackDomain;
+        }
+
+
+        getSlackCookie(slackDomain, (slackCookie) => {
+          if (! slackCookie) {
+            console.debug(`Unable to access slack "${slackCookieName}" cookie.`);
+            return callback(slackAuth);
+          } else {
+            slackAuth.cookie = slackCookie;
+          }
+
+          copyToClipboard(JSON.stringify(slackAuth));
+          console.debug(`slackAuth: ${slackAuth}`)
+
+          chrome.storage.local.set(
+            {slackAuth, slackToken, slackCookie, slackDomain},
+            () => callback(slackAuth)
+          );
+        });
       });
     });
   });
 }
 
+function getSlackCookie(slackDomain, callback) {
+  chrome.cookies.get({
+    url: `https://${slackDomain}.slack.com`,
+    name: slackCookieName,
+  }, (slackCookie) => {
+    callback(slackCookie.value);
+  });
+}
+
 function getSlackEmoji(slackDomain, slackToken, callback) {
+  // This works without adding an explicitly supplied cookie
+  // because we're already on the page, with the real cookie.
   fetch("https://" + slackDomain + ".slack.com/api/emoji.list", {
 		"headers": {
 			"accept": "*/*",

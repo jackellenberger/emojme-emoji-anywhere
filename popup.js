@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById("getSlackToken").addEventListener('click', () => {
-    getSlackToken();
+  document.getElementById("getSlackAuth").addEventListener('click', () => {
+    getSlackAuth();
   });
 
   document.getElementById("getSlackEmoji").addEventListener('click', () => {
@@ -82,12 +82,12 @@ function requestAlert(alertText) {
   );
 }
 
-function getSlackToken() {
-  chrome.runtime.sendMessage({message: 'getSlackToken', callback: 'alert'});
+function getSlackAuth() {
+  chrome.runtime.sendMessage({message: 'getSlackAuth', callback: 'alert'});
 }
 
 function getSlackEmoji() {
-  chrome.runtime.sendMessage({message: 'getSlackToken', callback: 'getSlackEmoji'});
+  chrome.runtime.sendMessage({message: 'getSlackAuth', callback: 'getSlackEmoji'});
 }
 
 
