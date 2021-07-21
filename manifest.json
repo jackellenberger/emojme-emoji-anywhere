@@ -19,8 +19,7 @@
     "storage",
     "activeTab",
     "tabs",
-    "http://*/",
-    "https://*/",
+    "https://*.slack.com/",
     "clipboardWrite",
     "clipboardRead",
     "cookies"
