@@ -15,11 +15,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'getSlackAuth') {
     getSlackAuth((slackAuth) => {
       if (request.callback === 'alert')
-        alert(`The following should have been copied to your clipboard: \n${JSON.stringify(slackAuth)}`);
+        prompt(`An authJSON for use with emojme has been placed on your clipboard.\nFor your convenience, it is printed below.`,
+        JSON.stringify(slackAuth));
       else if (request.callback === 'getSlackEmoji')
-        getSlackEmoji(result.slackDomain, result.slackToken, sendResponse);
+        getSlackEmoji(slackAuth.domain, slackAuth.token, sendResponse);
       else
-        sendResponse(result);
+        sendResponse(slackAuth);
     });
   }
 
